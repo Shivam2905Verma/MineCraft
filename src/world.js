@@ -35,7 +35,7 @@ export class World extends THREE.Group {
     },
   };
 
-  constructor(size = { width: 100, height: 10 }) {
+  constructor(size = { width: 64, height: 20 }) {
     super();
     this.size = size;
   }
@@ -172,6 +172,10 @@ export class World extends THREE.Group {
         );
         mesh.name = blockType.name;
         mesh.count = 0;
+        // * This object will block light and cast shadows onto other objects.
+        mesh.castShadow = true
+        // * This object can receive shadows from other objects
+        mesh.receiveShadow = true
         meshes[blockType.id] = mesh;
       });
 

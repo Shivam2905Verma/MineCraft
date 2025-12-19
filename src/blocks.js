@@ -4,9 +4,22 @@ const textureLoader = new THREE.TextureLoader();
 
 function loadTexture(path) {
   const texture = textureLoader.load(path);
+  /*
+   * “This texture’s colors are in sRGB format”
+   *  Images (PNG, JPG) are usually sRGB
+   *
+   *Without this, colors look:
+   *Too dark
+   *Washed out ❌
+   */
+
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.NearestFilter
-  texture.magFilter = THREE.NearestFilter
+
+  /*
+   *When the texture image size and the screen size don’t match, one image pixel (texel) does not map exactly to one screen pixel. Because of this, the GPU mixes nearby texel colors, which makes the texture look smooth or blurry. To avoid this, we use NearestFilter so the GPU always picks the nearest texel instead of mixing colors, keeping the texture sharp and clear.
+   */
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
   return texture;
 }
 
