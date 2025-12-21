@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 
 export class Player {
+  radius = 0.5;
+  height = 1.75;
+
   maxSpeed = 10;
   input = new THREE.Vector3();
   velocity = new THREE.Vector3();
@@ -9,20 +12,29 @@ export class Player {
     75,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000
+    100
   );
+  cameraHelper = new THREE.CameraHelper(this.camera);
 
   /**
    * @param {THREE.Scene} scene
    */
   controls = new PointerLockControls(this.camera, document.body);
   constructor(scene) {
-    this.position.set(25, 6, 40);
+    this.position.set(26, 12, 70);
     scene.add(this.camera);
+    scene.add(this.cameraHelper);
 
     // * Because the browser calls it like: document.onkeydown(event); So the caller is document, not your class so the this becomes document not my class due to which when ever i call "this" in the on keydown function then == document but this.control is in Game class not in document
     document.addEventListener("keydown", this.onKeydown.bind(this));
     document.addEventListener("keyup", this.onKeyUp.bind(this));
+
+    this.boundHelper = new THREE.Mesh(
+      new THREE.CylinderGeometry(this.radius, this.radius , this.height, 16),
+      new THREE.MeshBasicMaterial({ wireframe: true })
+    );
+
+    scene.add(this.boundHelper);
   }
 
   // * this function is called for every frame initially the input vector is 0,0,0 i press the w button the value of vocity get changes our player get moved it is neccessory to call this function in the animate() function which is called for every frame
@@ -41,6 +53,11 @@ export class Player {
 
       document.getElementById("player-position").innerHTML = this.toString();
     }
+  }
+
+  updateBoundHelper(){
+    this.boundHelper.position.copy(this.position);
+    this.boundHelper.position.y -= this.height /2
   }
 
   /**

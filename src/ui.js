@@ -9,6 +9,7 @@ export function lilGUI(world, player) {
 
   const playerFolder = gui.addFolder("Player");
   playerFolder.add(player, "maxSpeed", 10, 20).name("speed");
+  playerFolder.add(player.cameraHelper, "visible").name("Show camera helper of user");
 
   const terrainFolder = gui.addFolder("Terrain");
   terrainFolder.add(world.params, "seed", 0, 100).name("seed");

@@ -57,7 +57,7 @@ export class World extends THREE.Group {
         const row = [];
         for (let z = 0; z < this.size.width; z++) {
           row.push({
-            id: 0,
+            id: blocks.empty.id,
             instanceId: null,
           });
         }
@@ -132,7 +132,7 @@ export class World extends THREE.Group {
         height = Math.max(0, Math.min(height, this.size.height - 1));
 
         // How many blocks go upwards at the position of x and z
-        for (let y = 0; y <= this.size.height; y++) {
+        for (let y = 0; y < this.size.height; y++) {
           if (y < height && this.getBlock(x, y, z).id === blocks.empty.id) {
             this.setBlockId(x, y, z, blocks.dirt.id);
           } else if (y === height) {
@@ -162,8 +162,10 @@ export class World extends THREE.Group {
 
     const meshes = {};
 
+    // Exclude the empty block by its `id` property (previous code compared the
+    // whole object to a number which unintentionally included the empty block)
     Object.values(blocks)
-      .filter((blockid) => blockid !== blocks.empty.id)
+      .filter((blockType) => blockType.id !== blocks.empty.id)
       .forEach((blockType) => {
         const mesh = new THREE.InstancedMesh(
           geometry,
@@ -173,13 +175,11 @@ export class World extends THREE.Group {
         mesh.name = blockType.name;
         mesh.count = 0;
         // * This object will block light and cast shadows onto other objects.
-        mesh.castShadow = true
+        mesh.castShadow = true;
         // * This object can receive shadows from other objects
-        mesh.receiveShadow = true
+        mesh.receiveShadow = true;
         meshes[blockType.id] = mesh;
       });
-
-    console.log(meshes);
 
     const matrix = new THREE.Matrix4();
 
@@ -202,7 +202,6 @@ export class World extends THREE.Group {
         }
       }
     }
-
     this.add(...Object.values(meshes));
   }
 

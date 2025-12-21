@@ -4,19 +4,20 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { World } from "./world";
 import { lilGUI } from "./ui";
 import { Player } from "./player";
+import { Physics } from "./physics";
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
+const OrbitCamera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
 
-camera.position.set(-32, 16, -32);
+OrbitCamera.position.set(-32, 16, -32);
 
 function lights() {
   const sun = new THREE.DirectionalLight();
@@ -59,15 +60,16 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
 document.body.appendChild(renderer.domElement);
-const controls = new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(OrbitCamera, renderer.domElement);
 
 const world = new World();
 world.generate();
 scene.add(world);
 
 const player = new Player(scene);
+const physics = new Physics(scene)
 
-world.position.set(-10, -10, -10);
+world.position.set(0, 0, 0);
 
 let previousTime = performance.now();
 function animate() {
@@ -75,25 +77,30 @@ function animate() {
   let dt = (currentTime - previousTime) / 1000;
 
   requestAnimationFrame(animate);
-  player.applyInput(dt)
+  player.applyInput(dt);
+  player.updateBoundHelper()
+  physics.update( dt, player , world)
+  renderer.render(scene, player.controls.isLocked ? player.camera : OrbitCamera);
   controls.update();
-  renderer.render(scene, player.camera);
   stats.update();
-
+  
   previousTime = currentTime;
 }
 
 lights();
-lilGUI(world , player);
+lilGUI(world, player);
 animate();
 
 window.addEventListener("resize", () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
-  // Update camera
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
+  // Update Orbitcamera
+  OrbitCamera.aspect = width / height;
+  OrbitCamera.updateProjectionMatrix();
+  // Update Orbitcamera
+  player.camera.aspect = width / height;
+  player.camera.updateProjectionMatrix();
 
   // Update renderer
   renderer.setSize(width, height);
