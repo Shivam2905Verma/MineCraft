@@ -4,10 +4,14 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 export class Player {
   radius = 0.5;
   height = 1.75;
+  jumpSpeed = 10;
+  onGround = false;
 
   maxSpeed = 10;
   input = new THREE.Vector3();
   velocity = new THREE.Vector3();
+  #worldVelocity = new THREE.Vector3();
+
   camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
@@ -21,7 +25,7 @@ export class Player {
    */
   controls = new PointerLockControls(this.camera, document.body);
   constructor(scene) {
-    this.position.set(26, 12, 70);
+    this.position.set(26, 30, 25);
     scene.add(this.camera);
     scene.add(this.cameraHelper);
 
@@ -30,11 +34,32 @@ export class Player {
     document.addEventListener("keyup", this.onKeyUp.bind(this));
 
     this.boundHelper = new THREE.Mesh(
-      new THREE.CylinderGeometry(this.radius, this.radius , this.height, 16),
+      new THREE.CylinderGeometry(this.radius, this.radius, this.height, 16),
       new THREE.MeshBasicMaterial({ wireframe: true })
     );
 
     scene.add(this.boundHelper);
+  }
+
+  /**
+   * Returns the velocity of the player in world coordinates
+   * @returns {THREE.Vector3}
+   */
+  get worldVelocity() {
+    this.#worldVelocity.copy(this.velocity);
+    this.#worldVelocity.applyEuler(
+      new THREE.Euler(0, this.camera.rotation.y, 0)
+    );
+    return this.#worldVelocity;
+  }
+
+  /**
+   * Applies a change in velocity 'dv' that is specified in the world frame
+   * @param {THREE.Vector3} dv
+   */
+  applyWorldDeltaVelocity(dv) {
+    dv.applyEuler(new THREE.Euler(0, -this.camera.rotation.y, 0));
+    this.velocity.add(dv);
   }
 
   // * this function is called for every frame initially the input vector is 0,0,0 i press the w button the value of vocity get changes our player get moved it is neccessory to call this function in the animate() function which is called for every frame
@@ -50,14 +75,15 @@ export class Player {
        */
       this.controls.moveRight(this.velocity.x * dt);
       this.controls.moveForward(this.velocity.z * dt);
+      this.position.y += this.velocity.y * dt;
 
       document.getElementById("player-position").innerHTML = this.toString();
     }
   }
 
-  updateBoundHelper(){
+  updateBoundHelper() {
     this.boundHelper.position.copy(this.position);
-    this.boundHelper.position.y -= this.height /2
+    this.boundHelper.position.y -= this.height / 2;
   }
 
   /**
@@ -88,6 +114,11 @@ export class Player {
       case "KeyR":
         this.position.set(25, 6, 40);
         this.velocity.set(0, 0, 0);
+        break;
+      case "Space":
+        if(this.onGround){
+          this.velocity.y += this.jumpSpeed
+        }
         break;
     }
   }

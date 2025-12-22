@@ -77,8 +77,6 @@ function animate() {
   let dt = (currentTime - previousTime) / 1000;
 
   requestAnimationFrame(animate);
-  player.applyInput(dt);
-  player.updateBoundHelper()
   physics.update( dt, player , world)
   renderer.render(scene, player.controls.isLocked ? player.camera : OrbitCamera);
   controls.update();

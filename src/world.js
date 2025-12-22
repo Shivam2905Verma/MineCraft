@@ -47,7 +47,7 @@ export class World extends THREE.Group {
     this.generateTerrain(rng);
     this.generateMeshes();
   }
-
+ 
   // * here we are creating the whole boxes ids with there postions x,y,z so that we can target them with there positions thats why we have created a 3d-Array
   InitializeTerrain() {
     this.data = [];
