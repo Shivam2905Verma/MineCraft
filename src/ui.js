@@ -4,12 +4,14 @@ import { blocks, resources } from "./blocks";
 export function lilGUI(world, player) {
   const gui = new GUI();
 
-  gui.add(world.size, "width", 8, 128, 1).name("width");
-  gui.add(world.size, "height", 8, 64, 1).name("height");
+  gui.add(world.chunkSize, "width", 8, 128, 1).name("width");
+  gui.add(world.chunkSize, "height", 8, 64, 1).name("height");
 
   const playerFolder = gui.addFolder("Player");
   playerFolder.add(player, "maxSpeed", 10, 20).name("speed");
-  playerFolder.add(player.cameraHelper, "visible").name("Show camera helper of user");
+  playerFolder
+    .add(player.cameraHelper, "visible")
+    .name("Show camera helper of user");
 
   const terrainFolder = gui.addFolder("Terrain");
   terrainFolder.add(world.params, "seed", 0, 100).name("seed");

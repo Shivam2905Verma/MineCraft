@@ -68,10 +68,10 @@ export class Player {
       this.velocity.x = this.input.x;
       this.velocity.z = this.input.z;
       /*
-       *dt is the time gap between two frames.
-       *When one frame is drawn and the next frame is drawn, the time passed between them is dt.
-       *At 75 FPS, dt ≈ 1 / 75 ≈ 0.013 seconds.
-       *We multiply velocity by dt so that movement speed stays the same regardless of FPS.
+       * dt is the time gap between two frames.
+       * When one frame is drawn and the next frame is drawn, the time passed between them is dt.
+       * At 75 FPS, dt ≈ 1 / 75 ≈ 0.013 seconds.
+       * We multiply velocity by dt so that movement speed stays the same regardless of FPS.
        */
       this.controls.moveRight(this.velocity.x * dt);
       this.controls.moveForward(this.velocity.z * dt);
