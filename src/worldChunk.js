@@ -29,6 +29,7 @@ export class WorldChunk extends THREE.Group {
 
   constructor(size, params) {
     super();
+    this.laod = false;
     this.size = size;
     this.params = params;
   }
@@ -39,6 +40,8 @@ export class WorldChunk extends THREE.Group {
     this.generateRecourses(rng);
     this.generateTerrain(rng);
     this.generateMeshes();
+
+    this.laod = true;
   }
 
   // * here we are creating the whole boxes ids with there postions x,y,z so that we can target them with there positions thats why we have created a 3d-Array

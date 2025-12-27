@@ -10,6 +10,7 @@ const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x80a0e0, 50, 100);
 const OrbitCamera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -17,23 +18,24 @@ const OrbitCamera = new THREE.PerspectiveCamera(
   1000
 );
 
-OrbitCamera.position.set(-32, 16, -32);
+OrbitCamera.position.set(-20, 20, -20);
+const sun = new THREE.DirectionalLight();
 
 function lights() {
-  const sun = new THREE.DirectionalLight();
   sun.position.set(50, 50, 50);
 
   // * This means castShadow = true This light should create a shadow map.
   sun.castShadow = true;
-  sun.shadow.camera.left = -50;
-  sun.shadow.camera.right = 50;
-  sun.shadow.camera.bottom = -50;
+  sun.shadow.camera.left = -100;
+  sun.shadow.camera.right = 100;
+  sun.shadow.camera.bottom = -100;
   sun.shadow.camera.top = 50;
   sun.shadow.camera.near = 0.1;
-  sun.shadow.camera.far = 100;
-  sun.shadow.bias = 0.0005;
-  sun.shadow.mapSize = new THREE.Vector2(512, 512);
+  sun.shadow.camera.far = 200;
+  sun.shadow.bias = 0.0001;
+  sun.shadow.mapSize = new THREE.Vector2(2048, 2048);
   scene.add(sun);
+  scene.add(sun.target);
 
   const shadowHlper = new THREE.CameraHelper(sun.shadow.camera);
   // scene.add(shadowHlper);
@@ -45,7 +47,7 @@ function lights() {
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor("skyblue");
+renderer.setClearColor(0x80a0e0);
 
 /*
  * Shadow map = records first object from light; any object behind it is in shadow.
@@ -61,13 +63,14 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(OrbitCamera, renderer.domElement);
+controls.target.set(16, 16, 16);
 
 const world = new World();
 world.generate();
 scene.add(world);
 
 const player = new Player(scene);
-const physics = new Physics(scene)
+const physics = new Physics(scene);
 
 world.position.set(0, 0, 0);
 
@@ -77,16 +80,27 @@ function animate() {
   let dt = (currentTime - previousTime) / 1000;
 
   requestAnimationFrame(animate);
-  physics.update( dt, player , world)
-  renderer.render(scene, player.controls.isLocked ? player.camera : OrbitCamera);
+
+  if (player.controls.isLocked) {
+    physics.update(dt, player, world);
+    world.update(player);
+    sun.position.copy(player.position);
+    sun.position.sub(new THREE.Vector3(-50, -50, -50));
+    sun.target.position.copy(player.position);
+  }
+
+  renderer.render(
+    scene,
+    player.controls.isLocked ? player.camera : OrbitCamera
+  );
   controls.update();
   stats.update();
-  
+
   previousTime = currentTime;
 }
 
 lights();
-lilGUI(world, player);
+lilGUI(scene, world, player);
 animate();
 
 window.addEventListener("resize", () => {

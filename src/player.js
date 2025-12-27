@@ -27,7 +27,7 @@ export class Player {
   constructor(scene) {
     this.position.set(26, 30, 25);
     scene.add(this.camera);
-    scene.add(this.cameraHelper);
+    // scene.add(this.cameraHelper);
 
     // * Because the browser calls it like: document.onkeydown(event); So the caller is document, not your class so the this becomes document not my class due to which when ever i call "this" in the on keydown function then == document but this.control is in Game class not in document
     document.addEventListener("keydown", this.onKeydown.bind(this));

@@ -1,11 +1,12 @@
 import GUI from "lil-gui";
 import { blocks, resources } from "./blocks";
 
-export function lilGUI(world, player) {
+export function lilGUI(scene, world, player) {
   const gui = new GUI();
 
-  gui.add(world.chunkSize, "width", 8, 128, 1).name("width");
-  gui.add(world.chunkSize, "height", 8, 64, 1).name("height");
+  const sceneFolder = gui.addFolder("Scene");
+  sceneFolder.add(scene.fog, "near", 1, 200, 1).name("Fog Near");
+  sceneFolder.add(scene.fog, "far", 1, 200, 1).name("Fog Far");
 
   const playerFolder = gui.addFolder("Player");
   playerFolder.add(player, "maxSpeed", 10, 20).name("speed");
@@ -14,6 +15,8 @@ export function lilGUI(world, player) {
     .name("Show camera helper of user");
 
   const terrainFolder = gui.addFolder("Terrain");
+  terrainFolder.add(world, "asyncLoading").name("Async Loading");
+  terrainFolder.add(world, "drawDistance", 0, 5, 1).name("Draw Distance");
   terrainFolder.add(world.params, "seed", 0, 100).name("seed");
   terrainFolder.add(world.params.terrain, "scale", 10, 100).name("scale");
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("magnitude");
