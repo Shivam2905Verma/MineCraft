@@ -27,11 +27,12 @@ export class WorldChunk extends THREE.Group {
    */
   data = [];
 
-  constructor(size, params) {
+  constructor(size, params, dataStore) {
     super();
     this.laod = false;
     this.size = size;
     this.params = params;
+    this.dataStore = dataStore;
   }
 
   generate() {
@@ -39,6 +40,7 @@ export class WorldChunk extends THREE.Group {
     this.InitializeTerrain();
     this.generateRecourses(rng);
     this.generateTerrain(rng);
+    this.laodPlayerChanges();
     this.generateMeshes();
 
     this.laod = true;
@@ -141,6 +143,27 @@ export class WorldChunk extends THREE.Group {
     }
   }
 
+  laodPlayerChanges() {
+    for (let x = 0; x < this.size.width; x++) {
+      for (let y = 0; y < this.size.height; y++) {
+        for (let z = 0; z < this.size.width; z++) {
+          if (
+            this.dataStore.contains(this.position.x, this.position.z, x, y, z)
+          ) {
+            const blockId = this.dataStore.get(
+              this.position.x,
+              this.position.z,
+              x,
+              y,
+              z
+            );
+            this.setBlockId(x, y, z, blockId);
+          }
+        }
+      }
+    }
+  }
+
   generateMeshes() {
     this.clear();
 
@@ -168,7 +191,7 @@ export class WorldChunk extends THREE.Group {
           blockType.material,
           maxNumberOfBlocks
         );
-        mesh.name = blockType.name;
+        mesh.name = blockType.id;
         mesh.count = 0;
         // * This object will block light and cast shadows onto other objects.
         mesh.castShadow = true;
@@ -187,12 +210,12 @@ export class WorldChunk extends THREE.Group {
           if (blockID === blocks.empty.id) continue;
 
           const mesh = meshes[blockID];
-          const instanceID = mesh.count;
+          const instanceId = mesh.count;
 
           if (!this.isBlockObscured(x, y, z)) {
             matrix.setPosition(x, y, z);
-            mesh.setMatrixAt(instanceID, matrix);
-            this.setBlockInstanceId(x, y, z, instanceID);
+            mesh.setMatrixAt(instanceId, matrix);
+            this.setBlockInstanceId(x, y, z, instanceId);
             mesh.count++;
           }
         }
@@ -206,13 +229,132 @@ export class WorldChunk extends THREE.Group {
    * @param {number} x
    * @param {number} y
    * @param {number} z
-   * @returns {{id: number, instanceID: number}}
+   * @returns {{id: number, instanceId: number}}
    */
   getBlock(x, y, z) {
     if (this.inBounds(x, y, z)) {
       return this.data[x][y][z];
     } else {
       return null;
+    }
+  }
+
+  /**
+   * Removes the block at (x, y, z)
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   * @param {number} activeBlockId
+   */
+  addBlock(x, y, z, activeBlockId) {
+    if (this.getBlock(x, y, z).id === blocks.empty.id) {
+      this.setBlockId(x, y, z, activeBlockId);
+      this.addBlockInstance(x, y, z);
+      this.dataStore.set(
+        this.position.x,
+        this.position.z,
+        x,
+        y,
+        z,
+        activeBlockId
+      );
+    }
+  }
+  /**
+   * Removes the block at (x, y, z)
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  removeBlock(x, y, z) {
+    const block = this.getBlock(x, y, z);
+    if (block && block.id !== blocks.empty.id) {
+      this.deleteBlockInstance(x, y, z);
+      this.setBlockId(x, y, z, blocks.empty.id);
+      this.setBlockId(x, y, z, blocks.empty.id);
+      this.dataStore.set(
+        this.position.x,
+        this.position.z,
+        x,
+        y,
+        z,
+        blocks.empty.id
+      );
+    }
+  }
+
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  deleteBlockInstance(x, y, z) {
+    /*
+     * So first we find the block then find the instanceMesh(group it is of grass ,dirt ,stone etc) of the block then we
+     * swap the last mesh item with the item we have to remove
+     */
+    const block = this.getBlock(x, y, z);
+
+    if (block.id === blocks.empty.id || block.instanceId === null) return;
+
+    // Get the mesh and instance id of the block
+    const mesh = this.children.find(
+      (instanceMesh) => instanceMesh.name === block.id
+    );
+    const instanceId = block.instanceId;
+    console.log(instanceId);
+
+    // Swapping the transformation matrix of the block in the last position
+    // with the block that we are going to remove
+    const lastMatrix = new THREE.Matrix4();
+    mesh.getMatrixAt(mesh.count - 1, lastMatrix);
+
+    // Updating the instance id of the block in the last position to its new instance id
+    const v = new THREE.Vector3();
+    v.applyMatrix4(lastMatrix);
+    this.setBlockInstanceId(v.x, v.y, v.z, instanceId);
+
+    // Swapping the transformation matrices
+    mesh.setMatrixAt(instanceId, lastMatrix);
+
+    // This effectively removes the last instance from the scene
+    mesh.count--;
+
+    // Notify the instanced mesh we updated the instance matrix
+    // Also re-compute the bounding sphere so raycasting works
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+
+    // Remove the instance associated with the block and update the data model
+    this.setBlockInstanceId(x, y, z, null);
+  }
+
+  /**
+   * Create a new instance for the block at (x,y,z)
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  addBlockInstance(x, y, z) {
+    const block = this.getBlock(x, y, z);
+    console.log(block);
+
+    // Verify the block exists, it isn't an empty block type, and it doesn't already have an instance
+    if (block && block.id !== blocks.empty.id && block.instanceId === null) {
+      console.log(block.id);
+      // Get the mesh and instance id of the block
+      const mesh = this.children.find(
+        (instanceMesh) => instanceMesh.name === block.id
+      );
+      const instanceId = mesh.count++;
+      this.setBlockInstanceId(x, y, z, instanceId);
+
+      // Compute the transformation matrix for the new instance and update the instanced
+      const matrix = new THREE.Matrix4();
+      matrix.setPosition(x, y, z);
+      mesh.setMatrixAt(instanceId, matrix);
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
     }
   }
 

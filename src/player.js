@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { blocks } from "./blocks";
 
+const CENTER_SCREEN = new THREE.Vector2();
 export class Player {
   radius = 0.5;
   height = 1.75;
@@ -18,14 +20,17 @@ export class Player {
     0.1,
     100
   );
+  controls = new PointerLockControls(this.camera, document.body);
   cameraHelper = new THREE.CameraHelper(this.camera);
+  raycaster = new THREE.Raycaster(undefined, undefined, 0, 4);
+  selectedCoords = null;
+  activeBlockId = blocks.grass.id;
 
   /**
    * @param {THREE.Scene} scene
    */
-  controls = new PointerLockControls(this.camera, document.body);
   constructor(scene) {
-    this.position.set(26, 30, 25);
+    this.position.set(32, 32, 32);
     scene.add(this.camera);
     // scene.add(this.cameraHelper);
 
@@ -38,7 +43,17 @@ export class Player {
       new THREE.MeshBasicMaterial({ wireframe: true })
     );
 
-    scene.add(this.boundHelper);
+    // scene.add(this.boundHelper);
+
+    const selectionMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.3,
+      color: 0xffffaa,
+    });
+
+    const selectionGeometry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
+    this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
+    scene.add(this.selectionHelper);
   }
 
   /**
@@ -51,6 +66,54 @@ export class Player {
       new THREE.Euler(0, this.camera.rotation.y, 0)
     );
     return this.#worldVelocity;
+  }
+
+  /**
+   * @param {World} world
+   */
+  update(world) {
+    this.updateRaycaster(world);
+  }
+
+  /*
+   * Now insecection.object is the instanceMesh and its position is 0,0,0 in every chunk for every resouces so we
+   * used the parent which is the chunk and chunk positon + .getMatrixAt(intersection.instanceId, blockMatrix) (this is the local position of box) addiotion of both give the position of the box in the world
+   */
+  // *it is a invisible ray which object we will see it will give the info about that object
+  /**
+   * @param {World} world
+   */
+  updateRaycaster(world) {
+    this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
+    const intersections = this.raycaster.intersectObject(world, true);
+
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      // Get the chunk associated with the selected block
+      const chunk = intersection.object.parent;
+
+      // Get the transformation matrix for the selected block
+      const blockMatrix = new THREE.Matrix4();
+      intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
+
+      // Set the selected coordinates to the origin of the chunk,
+      // then apply the transformation matrix of the block to get
+      // the block coordinates
+      this.selectedCoords = chunk.position.clone();
+      this.selectedCoords.applyMatrix4(blockMatrix);
+
+      //* This will select the box where the first ray get hit if on top then make a new selection of block top + 1 if side = side + 1 this .normal() give where the ray get hit if on side (1,0,0) if on top (0,1,0)
+      if (this.activeBlockId !== blocks.empty.id) {
+        this.selectedCoords.add(intersection.normal);
+      }
+
+      this.selectionHelper.position.copy(this.selectedCoords);
+      this.selectionHelper.visible = true;
+    } else {
+      this.selectedCoords = null;
+      this.selectionHelper.visible = false;
+    }
   }
 
   /**
@@ -99,6 +162,16 @@ export class Player {
     }
 
     switch (event.code) {
+      case "Digit0":
+      case "Digit1":
+      case "Digit2":
+      case "Digit3":
+      case "Digit4":
+      case "Digit5":
+        this.activeBlockId = Number(event.key);
+        console.log("Acivekey = ", event.key);
+        break;
+
       case "KeyW":
         this.input.z = this.maxSpeed;
         break;
@@ -116,8 +189,8 @@ export class Player {
         this.velocity.set(0, 0, 0);
         break;
       case "Space":
-        if(this.onGround){
-          this.velocity.y += this.jumpSpeed
+        if (this.onGround) {
+          this.velocity.y += this.jumpSpeed;
         }
         break;
     }

@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { WorldChunk } from "./worldChunk";
+import { blocks } from "./blocks";
+import { DataStore } from "./dataStore";
 
 export class World extends THREE.Group {
   chunkSize = { width: 32, height: 20 };
@@ -11,10 +13,12 @@ export class World extends THREE.Group {
     seed: 0,
     terrain: {
       scale: 40,
-      magnitude: 0.40,
+      magnitude: 0.4,
       offset: 0.2,
     },
   };
+
+  dataStore = new DataStore();
 
   constructor(seed = 0) {
     super();
@@ -22,10 +26,11 @@ export class World extends THREE.Group {
   }
 
   generate() {
+    this.dataStore.clear();
     this.disposeChunk();
     for (let x = -this.drawDistance; x <= this.drawDistance; x++) {
       for (let z = -this.drawDistance; z <= this.drawDistance; z++) {
-        const chunk = new WorldChunk(this.chunkSize, this.params);
+        const chunk = new WorldChunk(this.chunkSize, this.params , this.dataStore);
         chunk.position.set(
           x * this.chunkSize.width,
           0,
@@ -119,9 +124,6 @@ export class World extends THREE.Group {
     for (const chunk of chunkToRemove) {
       chunk.disposeInstances();
       this.remove(chunk);
-      console.log(
-        `Removing chunk x ${chunk.userData.x} , z ${chunk.userData.z}`
-      );
     }
   }
 
@@ -131,7 +133,7 @@ export class World extends THREE.Group {
    * @param {number} z
    */
   generateChunk(x, z) {
-    const chunk = new WorldChunk(this.chunkSize, this.params);
+    const chunk = new WorldChunk(this.chunkSize, this.params , this.dataStore);
     chunk.position.set(x * this.chunkSize.width, 0, z * this.chunkSize.width);
     chunk.userData = { x, z };
     if (this.asyncLoading) {
@@ -140,7 +142,6 @@ export class World extends THREE.Group {
       chunk.generate();
     }
     this.add(chunk);
-    console.log(`Adding chunk at X: ${x} Z: ${z}`);
   }
 
   /**
@@ -211,5 +212,86 @@ export class World extends THREE.Group {
       }
     });
     this.clear();
+  }
+
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  removeBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+    if (chunk) {
+      chunk.removeBlock(coords.block.x, coords.block.y, coords.block.z);
+    }
+
+    // Reveal adjacent neighbors if they are hidden
+    this.revealBlock(x - 1, y, z);
+    this.revealBlock(x + 1, y, z);
+    this.revealBlock(x, y - 1, z);
+    this.revealBlock(x, y + 1, z);
+    this.revealBlock(x, y, z - 1);
+    this.revealBlock(x, y, z + 1);
+  }
+
+  /**
+   * Reveals the block at (x,y,z) by adding a new mesh instance
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   * @param {number} activeBlockId
+   */
+  addBlock(x, y, z, activeBlockId) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlock(
+        coords.block.x,
+        coords.block.y,
+        coords.block.z,
+        activeBlockId
+      );
+
+      this.hideBlock(x - 1, y, z);
+      this.hideBlock(x + 1, y, z);
+      this.hideBlock(x, y - 1, z);
+      this.hideBlock(x, y + 1, z);
+      this.hideBlock(x, y, z - 1);
+      this.hideBlock(x, y, z + 1);
+    }
+  }
+
+  /**
+   * Reveals the block at (x,y,z) by adding a new mesh instance
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  revealBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
+  }
+  /**
+   * Reveals the block at (x,y,z) by adding a new mesh instance
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  hideBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (
+      chunk &&
+      chunk.isBlockObscured(coords.block.x, coords.block.y, coords.block.z)
+    ) {
+      chunk.deleteBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
   }
 }
