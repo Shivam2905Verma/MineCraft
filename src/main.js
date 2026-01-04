@@ -20,6 +20,7 @@ const OrbitCamera = new THREE.PerspectiveCamera(
 );
 
 OrbitCamera.position.set(-20, 20, -20);
+OrbitCamera.layers.enable(1);
 const sun = new THREE.DirectionalLight();
 
 function lights() {
@@ -33,7 +34,7 @@ function lights() {
   sun.shadow.camera.top = 50;
   sun.shadow.camera.near = 0.1;
   sun.shadow.camera.far = 200;
-  sun.shadow.bias = 0.0001;
+  sun.shadow.bias = 0.00001;
   sun.shadow.mapSize = new THREE.Vector2(2048, 2048);
   scene.add(sun);
   scene.add(sun.target);
@@ -73,23 +74,21 @@ scene.add(world);
 const player = new Player(scene);
 const physics = new Physics(scene);
 
-
 function onMouseDown(event) {
-  if(player.controls.isLocked && player.selectedCoords){
-    if(player.activeBlockId === blocks.empty.id){
+  if (player.controls.isLocked && player.selectedCoords) {
+    if (player.activeBlockId === blocks.empty.id) {
       world.removeBlock(
         player.selectedCoords.x,
         player.selectedCoords.y,
-        player.selectedCoords.z,
-      )
-    }else{
+        player.selectedCoords.z
+      );
+    } else {
       world.addBlock(
         player.selectedCoords.x,
         player.selectedCoords.y,
         player.selectedCoords.z,
         player.activeBlockId
-      )
-
+      );
     }
   }
 }

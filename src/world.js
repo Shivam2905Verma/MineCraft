@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { WorldChunk } from "./worldChunk";
-import { blocks } from "./blocks";
 import { DataStore } from "./dataStore";
 
 export class World extends THREE.Group {
@@ -12,9 +11,29 @@ export class World extends THREE.Group {
   params = {
     seed: 0,
     terrain: {
-      scale: 40,
-      magnitude: 0.4,
+      scale: 30,
+      magnitude: 0.3,
       offset: 0.2,
+      waterOffset: 3,
+    },
+
+    trees: {
+      trunk: {
+        minHeight: 6,
+        maxHeight: 9,
+      },
+      canopy: {
+        minRadius: 3,
+        maxRadius: 4,
+        density: 0.5,
+      },
+
+      frequency: 0.015,
+    },
+
+    clouds: {
+      scale: 30,
+      density: 0.35,
     },
   };
 
@@ -30,7 +49,11 @@ export class World extends THREE.Group {
     this.disposeChunk();
     for (let x = -this.drawDistance; x <= this.drawDistance; x++) {
       for (let z = -this.drawDistance; z <= this.drawDistance; z++) {
-        const chunk = new WorldChunk(this.chunkSize, this.params , this.dataStore);
+        const chunk = new WorldChunk(
+          this.chunkSize,
+          this.params,
+          this.dataStore
+        );
         chunk.position.set(
           x * this.chunkSize.width,
           0,
@@ -133,7 +156,7 @@ export class World extends THREE.Group {
    * @param {number} z
    */
   generateChunk(x, z) {
-    const chunk = new WorldChunk(this.chunkSize, this.params , this.dataStore);
+    const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
     chunk.position.set(x * this.chunkSize.width, 0, z * this.chunkSize.width);
     chunk.userData = { x, z };
     if (this.asyncLoading) {

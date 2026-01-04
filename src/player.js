@@ -31,6 +31,7 @@ export class Player {
    */
   constructor(scene) {
     this.position.set(32, 32, 32);
+    this.camera.layers.enable(1)
     scene.add(this.camera);
     // scene.add(this.cameraHelper);
 
@@ -54,6 +55,7 @@ export class Player {
     const selectionGeometry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
     this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
     scene.add(this.selectionHelper);
+    this.raycaster.layers.set(0);
   }
 
   /**
@@ -97,9 +99,9 @@ export class Player {
       const blockMatrix = new THREE.Matrix4();
       intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
 
-      // Set the selected coordinates to the origin of the chunk,
-      // then apply the transformation matrix of the block to get
-      // the block coordinates
+      //* Set the selected coordinates to the origin of the chunk,
+      //* then apply the transformation matrix of the block to get
+      //* the block coordinates
       this.selectedCoords = chunk.position.clone();
       this.selectedCoords.applyMatrix4(blockMatrix);
 

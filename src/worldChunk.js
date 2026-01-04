@@ -40,6 +40,8 @@ export class WorldChunk extends THREE.Group {
     this.InitializeTerrain();
     this.generateRecourses(rng);
     this.generateTerrain(rng);
+    this.generateTrees(rng);
+    this.generateClouds(rng);
     this.laodPlayerChanges();
     this.generateMeshes();
 
@@ -97,6 +99,85 @@ export class WorldChunk extends THREE.Group {
     });
   }
 
+  /**
+   * @param {RNG} rng
+   */
+  generateTrees(rng) {
+    const generateTreeTrunk = (x, z, rng) => {
+      const minHeight = this.params.trees.trunk.minHeight;
+      const maxHeight = this.params.trees.trunk.maxHeight;
+
+      const height = Math.round(
+        minHeight + (maxHeight - minHeight) * rng.random()
+      );
+
+      for (let y = 0; y < this.size.height; y++) {
+        const block = this.getBlock(x, y, z);
+        if (block && block.id == blocks.grass.id) {
+          for (let treeY = y + 1; treeY <= y + height; treeY++) {
+            this.setBlockId(x, treeY, z, blocks.tree.id);
+          }
+          generateTreeCanapy(x, y + height, z, rng);
+          break;
+        }
+      }
+    };
+    const generateTreeCanapy = (centerx, centery, centerz, rng) => {
+      const minR = this.params.trees.canopy.minRadius;
+      const maxR = this.params.trees.canopy.maxRadius;
+      const r = Math.round(minR + (maxR - minR) * rng.random());
+
+      for (let x = -r; x <= r; x++) {
+        for (let y = -r; y <= r; y++) {
+          for (let z = -r; z <= r; z++) {
+            const n = rng.random();
+            if (x * x + y * y + z * z > r * r) continue;
+            const block = this.getBlock(centerx + x, centery + y, centerz + z);
+            if (block && block.id !== blocks.empty.id) continue;
+            if (n < this.params.trees.canopy.density) {
+              this.setBlockId(
+                centerx + x,
+                centery + y,
+                centerz + z,
+                blocks.leaves.id
+              );
+            }
+          }
+        }
+      }
+    };
+
+    let offset = this.params.trees.canopy.maxRadius;
+    for (let x = offset; x < this.size.width - offset; x++) {
+      for (let z = offset; z < this.size.width - offset; z++) {
+        if (rng.random() < this.params.trees.frequency) {
+          generateTreeTrunk(x, z, rng);
+        }
+      }
+    }
+  }
+  /**
+   * @param {RNG} rng
+   */
+  generateClouds(rng) {
+    const simplex = new SimplexNoise(rng);
+    for (let x = 0; x < this.size.width; x++) {
+      for (let z = 0; z < this.size.width; z++) {
+        const value =
+          (simplex.noise(
+            (this.position.x + x) / this.params.clouds.scale,
+            (this.position.z + z) / this.params.clouds.scale
+          ) +
+            1) *
+          0.5;
+
+        if (value < this.params.clouds.density) {
+          this.setBlockId(x, this.size.height - 1, z, blocks.cloud.id);
+        }
+      }
+    }
+  }
+
   generateTerrain(rng) {
     /*
      *Simplex Noise is a deterministic, position-based function.
@@ -131,7 +212,9 @@ export class WorldChunk extends THREE.Group {
 
         // How many blocks go upwards at the position of x and z
         for (let y = 0; y < this.size.height; y++) {
-          if (y < height && this.getBlock(x, y, z).id === blocks.empty.id) {
+          if (y <= this.params.terrain.waterOffset && y <= height) {
+            this.setBlockId(x, y, z, blocks.sand.id);
+          }else if (y < height && this.getBlock(x, y, z).id === blocks.empty.id) {
             this.setBlockId(x, y, z, blocks.dirt.id);
           } else if (y === height) {
             this.setBlockId(x, y, z, blocks.grass.id);
@@ -164,8 +247,31 @@ export class WorldChunk extends THREE.Group {
     }
   }
 
+  generateWater() {
+    const material = new THREE.MeshLambertMaterial({
+      color: 0x9090e0,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+    });
+
+    const waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(), material);
+    waterMesh.rotateX(-Math.PI / 2.0);
+    waterMesh.position.set(
+      this.size.width / 2,
+      this.params.terrain.waterOffset + 0.4,
+      this.size.width / 2
+    );
+
+    waterMesh.scale.set(this.size.width, this.size.width, 1);
+    waterMesh.layers.set(1)
+    this.add(waterMesh);
+  }
+
   generateMeshes() {
     this.clear();
+
+    this.generateWater();
 
     const maxNumberOfBlocks =
       this.size.width * this.size.width * this.size.height;

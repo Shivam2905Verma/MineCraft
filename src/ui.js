@@ -1,5 +1,6 @@
 import GUI from "lil-gui";
 import { blocks, resources } from "./blocks";
+import { World } from "./world";
 
 export function lilGUI(scene, world, player) {
   const gui = new GUI();
@@ -21,6 +22,7 @@ export function lilGUI(scene, world, player) {
   terrainFolder.add(world.params.terrain, "scale", 10, 100).name("scale");
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("magnitude");
   terrainFolder.add(world.params.terrain, "offset", 0, 1).name("offset");
+  terrainFolder.add(world.params.terrain, "waterOffset", 0, 10).name("Wateroffset");
 
   const resourcesFolder = gui.addFolder("resources");
 
@@ -33,6 +35,18 @@ export function lilGUI(scene, world, player) {
     scaleFolder.add(res.scale, "y", 1, 100).name("y scale");
     scaleFolder.add(res.scale, "z", 1, 100).name("z scale");
   });
+
+  const treesFolder = terrainFolder.addFolder("Trees").close();
+  treesFolder.add(world.params.trees , 'frequency' , 0 , 0.1).name('Frequency')
+  treesFolder.add(world.params.trees.trunk, 'minHeight', 0, 10, 1).name('Min Trunk Height');
+  treesFolder.add(world.params.trees.trunk, 'maxHeight', 0, 10, 1).name('Max Trunk Height');
+  treesFolder.add(world.params.trees.canopy, 'minRadius', 0, 10, 1).name('Min Canopy Size');
+  treesFolder.add(world.params.trees.canopy, 'maxRadius', 0, 10, 1).name('Max Canopy Size');
+  treesFolder.add(world.params.trees.canopy, 'density', 0, 1).name('Canopy Density');
+
+   const cloudFolder = terrainFolder.addFolder("Clouds").close();
+  cloudFolder.add(world.params.clouds , 'scale' , 0 , 100).name('scale')
+  cloudFolder.add(world.params.clouds, 'density', 0, 1).name('density');
 
   gui.onChange(() => {
     world.generate();
