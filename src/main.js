@@ -6,6 +6,7 @@ import { lilGUI } from "./ui";
 import { Player } from "./player";
 import { Physics } from "./physics";
 import { blocks } from "./blocks";
+import { ModelLoader } from "./modelLoader";
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
@@ -71,6 +72,11 @@ const world = new World();
 world.generate();
 scene.add(world);
 
+const modelLoader = new ModelLoader();
+modelLoader.loadModels((models) => {
+  player.tool.setMesh(models.pickaxe);
+});
+
 const player = new Player(scene);
 const physics = new Physics(scene);
 
@@ -82,6 +88,7 @@ function onMouseDown(event) {
         player.selectedCoords.y,
         player.selectedCoords.z
       );
+      player.tool.startAnimation();
     } else {
       world.addBlock(
         player.selectedCoords.x,

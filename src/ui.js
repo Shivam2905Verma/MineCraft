@@ -4,7 +4,7 @@ import { World } from "./world";
 
 export function lilGUI(scene, world, player) {
   const gui = new GUI();
-
+  gui.close()
   const sceneFolder = gui.addFolder("Scene");
   sceneFolder.add(scene.fog, "near", 1, 200, 1).name("Fog Near");
   sceneFolder.add(scene.fog, "far", 1, 200, 1).name("Fog Far");
@@ -49,6 +49,7 @@ export function lilGUI(scene, world, player) {
   cloudFolder.add(world.params.clouds, 'density', 0, 1).name('density');
 
   gui.onChange(() => {
-    world.generate();
+    world.generate(true);
   });
+
 }

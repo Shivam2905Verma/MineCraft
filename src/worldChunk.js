@@ -377,7 +377,6 @@ export class WorldChunk extends THREE.Group {
     if (block && block.id !== blocks.empty.id) {
       this.deleteBlockInstance(x, y, z);
       this.setBlockId(x, y, z, blocks.empty.id);
-      this.setBlockId(x, y, z, blocks.empty.id);
       this.dataStore.set(
         this.position.x,
         this.position.z,

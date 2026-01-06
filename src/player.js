@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { blocks } from "./blocks";
+import { Tool } from "./tool";
 
 const CENTER_SCREEN = new THREE.Vector2();
 export class Player {
@@ -8,6 +9,7 @@ export class Player {
   height = 1.75;
   jumpSpeed = 10;
   onGround = false;
+  debugCamera = false;
 
   maxSpeed = 10;
   input = new THREE.Vector3();
@@ -24,16 +26,26 @@ export class Player {
   cameraHelper = new THREE.CameraHelper(this.camera);
   raycaster = new THREE.Raycaster(undefined, undefined, 0, 4);
   selectedCoords = null;
-  activeBlockId = blocks.grass.id;
+  activeBlockId = blocks.empty.id;
+
+  tool = new Tool();
 
   /**
    * @param {THREE.Scene} scene
    */
   constructor(scene) {
-    this.position.set(32, 32, 32);
-    this.camera.layers.enable(1)
+    document
+      .getElementById(`toolbar-${this.activeBlockId}`)
+      .classList.add("selected");
+    this.position.set(32, 15, 32);
+    this.camera.layers.enable(1);
     scene.add(this.camera);
     // scene.add(this.cameraHelper);
+    this.camera.add(this.tool);
+
+    // Hide/show instructions based on pointer controls locking/unlocking
+    this.controls.addEventListener("lock", this.onCameraLock.bind(this));
+    this.controls.addEventListener("unlock", this.onCameraUnlock.bind(this));
 
     // * Because the browser calls it like: document.onkeydown(event); So the caller is document, not your class so the this becomes document not my class due to which when ever i call "this" in the on keydown function then == document but this.control is in Game class not in document
     document.addEventListener("keydown", this.onKeydown.bind(this));
@@ -58,6 +70,16 @@ export class Player {
     this.raycaster.layers.set(0);
   }
 
+  onCameraLock() {
+    document.getElementById("overlay").style.visibility = "hidden";
+  }
+
+  onCameraUnlock() {
+    if (!this.debugCamera) {
+      document.getElementById("overlay").style.visibility = "visible";
+    }
+  }
+
   /**
    * Returns the velocity of the player in world coordinates
    * @returns {THREE.Vector3}
@@ -75,6 +97,7 @@ export class Player {
    */
   update(world) {
     this.updateRaycaster(world);
+    this.tool.update();
   }
 
   /*
@@ -160,6 +183,7 @@ export class Player {
 
   onKeydown(event) {
     if (!this.controls.lock()) {
+      this.debugCamera = false;
       this.controls.lock();
     }
 
@@ -170,8 +194,17 @@ export class Player {
       case "Digit3":
       case "Digit4":
       case "Digit5":
+      case "Digit6":
+      case "Digit7":
+      case "Digit8":
+        document
+          .getElementById(`toolbar-${this.activeBlockId}`)
+          .classList.remove("selected");
         this.activeBlockId = Number(event.key);
-        console.log("Acivekey = ", event.key);
+        document
+          .getElementById(`toolbar-${this.activeBlockId}`)
+          .classList.add("selected");
+        this.tool.visible = this.activeBlockId === 0;
         break;
 
       case "KeyW":
@@ -187,13 +220,17 @@ export class Player {
         this.input.x = this.maxSpeed;
         break;
       case "KeyR":
-        this.position.set(25, 6, 40);
+        this.position.set(32, 15, 32);
         this.velocity.set(0, 0, 0);
         break;
       case "Space":
         if (this.onGround) {
           this.velocity.y += this.jumpSpeed;
         }
+        break;
+      case "F10":
+        this.debugCamera = true;
+        this.controls.unlock();
         break;
     }
   }
@@ -218,8 +255,8 @@ export class Player {
   toString() {
     let str = "";
     str += `X: ${this.position.x.toFixed(3)}`;
-    str += `Y: ${this.position.y.toFixed(3)}`;
-    str += `Z: ${this.position.z.toFixed(3)}`;
+    str += ` Y: ${this.position.y.toFixed(3)}`;
+    str += ` Z: ${this.position.z.toFixed(3)}`;
 
     return str;
   }

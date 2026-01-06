@@ -2,17 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/blockimage.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>package.json</title>
+    <title>MineCraft</title>
     <link rel="stylesheet" href="./src/style.css">
   </head>
   <body>
-    <div id="info">
-      <div id="player-position">
-
-      </div>
+    <div id="toolbar-container">
+    <div id="toolbar">
+        <img class="toolbar-icon" id="toolbar-1" src="./BlocksTexture/grass.png"></img>
+        <img class="toolbar-icon" id="toolbar-2" src="./BlocksTexture/dirt.png"></img>
+        <img class="toolbar-icon" id="toolbar-3" src="./BlocksTexture/stone.png"></img>
+        <img class="toolbar-icon" id="toolbar-4" src="./BlocksTexture/coal_ore.png"></img>
+        <img class="toolbar-icon" id="toolbar-5" src="./BlocksTexture/iron_ore.png"></img>
+        <img class="toolbar-icon" id="toolbar-6" src="./BlocksTexture/jungle_tree_top.png"></img>
+        <img class="toolbar-icon" id="toolbar-7" src="./BlocksTexture/jungle_leaves.png"></img>
+        <img class="toolbar-icon" id="toolbar-8" src="./BlocksTexture/sand.png"></img>
+        <img class="toolbar-icon" id="toolbar-0" src="./BlocksTexture/pickaxe.png"></img>
     </div>
+</div>
+  <div id="overlay">
+    <div id="instructions">
+      <h1>MINECRAFTjs</h1>
+      W A S D - Move<br>
+      SPACE - Jump<br>
+      R - Reset Camera<br>
+      U - Toggle UI
+      0 - Pickaxe<br>
+      1-8 - Select Block<br>
+      F2 - Save Game<br>
+      F4 - Load Game<br>
+      F10 - Debug Camera<br><br>
+      <h2>PRESS ANY KEY TO START</h2>
+    </div>
+  </div>
+    <div id="info">
+      <div id="player-position"></div>
+    </div>
+    <div id="status"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
